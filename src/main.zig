@@ -4,8 +4,8 @@ const c = @cImport({
     @cInclude("SDL2/SDL.h");
 });
 
-const window_width: u16 = 800;
-const window_height: u16 = 600;
+var window_width: c_int = 800;
+var window_height: c_int = 800;
 const cell_wall_width: f32 = 1.0;
 
 const N = 1;
@@ -116,7 +116,7 @@ pub fn main() !void {
                 seed = try std.fmt.parseUnsigned(u64, std.mem.span(args[3]), 10);
         },
         else => {
-            try usage(program, "Missing arguments\n");
+            try usage(program, "Missing arguments");
             return;
         },
     }
@@ -172,6 +172,9 @@ pub fn main() !void {
     };
     defer c.SDL_DestroyRenderer(renderer);
 
+    // Make window resizable
+    _ = c.SDL_SetWindowResizable(window, c.SDL_TRUE);
+
     carve_path(&maze, random, 0, 0);
 
     var quit = false;
@@ -189,6 +192,11 @@ pub fn main() !void {
             }
         }
 
+        // Get window size for if it has been resized and recalculate the cell_width and cell_height
+        _ = c.SDL_GetWindowSize(window, &window_width, &window_height);
+        maze.cell_width = @intToFloat(f32, window_width) / @intToFloat(f32, maze_width);
+        maze.cell_height = @intToFloat(f32, window_height) / @intToFloat(f32, maze_height);
+
         _ = c.SDL_SetRenderDrawColor(renderer, 0x18, 0x18, 0x18, 0xff);
         _ = c.SDL_RenderClear(renderer);
 
@@ -201,17 +209,17 @@ pub fn main() !void {
 
                 _ = c.SDL_SetRenderDrawColor(renderer, 0xee, 0xee, 0xee, 0xff);
 
-                rect.x = @intToFloat(f32, x) * cell_width + cell_wall_width;
-                rect.y = @intToFloat(f32, y) * cell_height + cell_wall_width;
+                rect.x = @intToFloat(f32, x) * maze.cell_width + cell_wall_width;
+                rect.y = @intToFloat(f32, y) * maze.cell_height + cell_wall_width;
 
                 if (cell & E != 0) {
-                    rect.w = cell_width * 2 - cell_wall_width * 2;
-                    rect.h = cell_height - cell_wall_width * 2;
+                    rect.w = maze.cell_width * 2 - cell_wall_width * 2;
+                    rect.h = maze.cell_height - cell_wall_width * 2;
                     _ = c.SDL_RenderFillRectF(renderer, &rect);
                 }
                 if (cell & S != 0) {
-                    rect.w = cell_width - cell_wall_width * 2;
-                    rect.h = cell_height * 2 - cell_wall_width * 2;
+                    rect.w = maze.cell_width - cell_wall_width * 2;
+                    rect.h = maze.cell_height * 2 - cell_wall_width * 2;
                     _ = c.SDL_RenderFillRectF(renderer, &rect);
                 }
 
