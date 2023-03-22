@@ -143,7 +143,7 @@ pub fn main() !void {
         // Allocate memory for grid as onedimensional array
         .grid = blk: {
             var res = try allocator.alloc(u8, maze_width * maze_height);
-            for (res) |_, i| {
+            for (res, 0..) |_, i| {
                 res[i] = 0;
             }
             break :blk res;
@@ -181,7 +181,7 @@ pub fn main() !void {
     while (!quit) {
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
-            switch (event.@"type") {
+            switch (event.type) {
                 c.SDL_QUIT => {
                     quit = true;
                 },
